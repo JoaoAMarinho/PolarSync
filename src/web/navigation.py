@@ -1,68 +1,58 @@
 from utils.logger import logger
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from .constants import LOGIN_URL, TRAINING_DATE_URL
+from datetime import datetime
+from .constants import LOGIN_URL, DIARY_URL, TRAINING_DATE_URL
 
 
-def login(driver, config):
+def login(browser, config):
     """
-    Login to Polar Flow using the provided credentials.
+    Log in to the Polar Flow website using config values.
     """
-    driver.get(LOGIN_URL)
+    browser.goto(LOGIN_URL)
 
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, 'input[name="username"]'))
-    )
+    # Fill in the username and password
+    browser.fill('input[name="username"]', config["username"])
+    browser.fill('input[name="password"]', config["password"])
+    browser.click('button[type="submit"]')
 
-    driver.find_element(By.CSS_SELECTOR, 'input[name="username"]').send_keys(
-        config["username"]
-    )
-    driver.find_element(By.CSS_SELECTOR, 'input[name="password"]').send_keys(
-        config["username"], Keys.RETURN
-    )
+    if browser.url.endswith("/login"):
+        raise Exception("Login failed or page did not redirect correctly.")
 
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located(
-            (By.XPATH, '//h1[contains(text(), "You are signed in to Polar services")]')
-        )
-    )
+    # Click the login button
     logger.info("Login successful!")
 
 
-def accept_cookies(driver, session):
+def accept_cookies(browser, session):
     """
-    Accept necessary cookies in the Polar Flow website.
+    Accept necessary cookies.
     """
     try:
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located(
-                (
-                    By.ID,
-                    "CybotCookiebotDialogBodyLevelButtonLevelOptinAllowallSelection",
-                )
-            )
+        button = browser.locator(
+            "#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowallSelection"
         )
-        cookie_button = driver.find_element(
-            By.ID, "CybotCookiebotDialogBodyLevelButtonLevelOptinAllowallSelection"
-        )
-        cookie_button.click()
+        button.click()
 
         def set_cookies(session, cookies):
             for cookie in cookies:
                 session.cookies.set(cookie["name"], cookie["value"])
+            session.cookies.set("timezone", "0")
 
-        set_cookies(session, driver.get_cookies())
+        set_cookies(session, browser.context.cookies())
     except Exception as e:
         logger.error("Cookie consent button not found or already accepted:", e)
 
 
-def navigate_to_workout_page(driver):
-    driver.get(TRAINING_DATE_URL)
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located(
-            (By.XPATH, '//h1[contains(text(), "Adicionar objetivo de treino")]')
-        )
-    )
-    print("Navigated to training objective page.")
+def navigate_to_objective_target(browser, objective):
+    """
+    Navigate to the objective target page.
+    """
+    formated_date = datetime.fromisoformat(objective["datetime"]).strftime("%Y-%m-%d")
+    browser.goto(TRAINING_DATE_URL + formated_date)
+    logger.info(f"Navigated to '{formated_date}' objective target page.")
+
+
+def navigate_to_diary(browser):
+    """
+    Navigate to the diary page.
+    """
+    browser.goto(DIARY_URL)
+    logger.info("Navigated to diary page.")

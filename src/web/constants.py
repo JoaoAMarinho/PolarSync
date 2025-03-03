@@ -1,4 +1,7 @@
-## Constants
+## Pages
 LOGIN_URL = "https://auth.polar.com/login"
-TRAINING_DATE_URL = "https://flow.polar.com/target?date=2025-02-26"
+DIARY_URL = "https://flow.polar.com/diary"
+TRAINING_DATE_URL = "https://flow.polar.com/target?date="
+
+## API
 TRAINING_TARGET_URL = "https://flow.polar.com/api/trainingtarget"

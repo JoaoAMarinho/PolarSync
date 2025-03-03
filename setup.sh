@@ -2,7 +2,7 @@
 
 echo "🚀 Setting up the project..."
 
-# 1️⃣ Create and activate a virtual environment
+# Create and activate a virtual environment
 if [ ! -d "venv" ]; then
     echo "📦 Creating virtual environment..."
     python3 -m venv venv
@@ -13,7 +13,7 @@ fi
 echo "🔍 Activating virtual environment..."
 source venv/bin/activate || source venv/Scripts/activate
 
-# 2️⃣ Install dependencies
+# Install dependencies
 if [ -f "requirements.txt" ]; then
     echo "📜 Installing dependencies from requirements.txt..."
     pip install --upgrade pip
@@ -22,7 +22,11 @@ else
     echo "⚠️ No requirements.txt found. Skipping dependency installation."
 fi
 
-# 3️⃣ Set up Git hooks
+# Install Playwright and its necessary binaries
+echo "📦 Installing Playwright's necessary browser binaries..."
+python -m playwright install chromium 
+
+# Set up Git hooks
 if [ -d "git-hooks" ]; then
     echo "🔗 Configuring Git hooks..."
     git config core.hooksPath git-hooks

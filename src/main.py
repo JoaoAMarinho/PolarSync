@@ -1,68 +1,51 @@
-# main.py
-
-from utils.logger import logger  # Global logger instance
-from web.webdriver_manager import initialize_driver, close_driver
-from web.navigation import login, navigate_to_workout_page, accept_cookies
-
-# from api.workout_api import create_workout
 from requests import Session
-from objective_builder.builder import WorkoutObjectiveBuilder
-from config.settings import (
-    LOGIN_URL,
-    WORKOUT_DATE_URL,
-    TRAINING_TARGET_URL
-)
+from utils.logger import logger  # Global logger instance
 from config.config_loader import load_config
+from web.initializer import initialize_browser
+from web.navigation import login, navigate_to_objective_target, accept_cookies
+from web.api import create_training_objective
+from objective.builder import ObjectiveBuilder, ExerciseTargetBuilder, PhaseBuilder
+
 
 def main():
     config = load_config()
+    browser = initialize_browser(background=False)
 
     try:
-    driver = initialize_driver()
-        login(driver, config)
-
-        # Assess Day
-        navigate_to_workout_page(driver)
+        login(browser, config)
 
         session = Session()
-        accept_cookies(driver, session)
-
-        # builder = WorkoutObjectiveBuilder()
-        # workout_data = builder.add_exercise_target(
-        #     sport_id=1,
-        #     phases=[
-        #         {
-        #             "phaseType": "REPEAT",
-        #             "repeatCount": 2,
-        #             "phases": [
-        #                 {
-        #                     "distance": 21000,
-        #                     "duration": None,
-        #                     "goalType": "DISTANCE",
-        #                     "intensityType": "HEART_RATE_ZONES",
-        #                     "lowerZone": 1,
-        #                     "name": "Phase name",
-        #                     "phaseChangeType": "AUTOMATIC",
-        #                     "phaseType": "PHASE",
-        #                     "upperZone": 1,
-        #                 }
-        #             ],
-        #         }
-        #     ]
-        # ).build()
-
-        # response = create_workout(session, workout_data)
-
-        # if response.status_code == 201:
-        #     logger.info("Workout created successfully!")
-        # else:
-        #     logger.error("Failed to create workout.")
-        #     logger.error(f"Status Code: {response.status_code}")
-        #     logger.error(f"Response: {response.text}")
+        target = (
+            ExerciseTargetBuilder()
+            .with_sport_id("run")
+            .add_phase(
+                PhaseBuilder.create_phase(
+                    name="El nome",
+                    goal_type="DISTANCE",
+                    distance=10,
+                    lower_zone=1,
+                    upper_zone=1,
+                )
+            )
+        )
+        objective = (
+            ObjectiveBuilder()
+            .with_type("PHASED")
+            .with_name("ok")
+            .with_description("ok")
+            .add_target(target)
+            .with_date("2025-03-04")
+            .build()
+        )
+        logger.info(f"Creating objective:\n\t{objective}\n")
+        navigate_to_objective_target(browser, objective)
+        accept_cookies(browser, session)
+        create_training_objective(session, objective)
     except Exception as e:
         logger.error(f"An error occurred: {e}")
     finally:
-        close_driver(driver)
+        session.close()
+        browser.close()
 
 
 if __name__ == "__main__":
